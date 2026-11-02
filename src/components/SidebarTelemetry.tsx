@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   XCircle,
   Mail,
-  ShieldAlert,
   Play,
   ChevronDown,
   ExternalLink
@@ -36,36 +35,36 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-stretch min-h-0">
       
       {/* 1. Scheduled Scraper Runs Expandable Card */}
-      <div className="rounded-box bg-gray-100 dark:bg-neutral-900 border border-black dark:border-neutral-700 overflow-hidden shadow-tiny">
+      <div className="rounded-box bg-gray-100 dark:bg-neutral-900 border border-black dark:border-neutral-700 overflow-hidden shadow-tiny flex flex-col">
         {/* Clickable Header Button */}
         <button
           type="button"
           onClick={() => setIsScraperExpanded(!isScraperExpanded)}
-          className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-200/60 dark:hover:bg-neutral-800/60 transition-colors focus:outline-none"
+          className="w-full px-4 h-[68px] flex items-center justify-between text-left hover:bg-gray-200/60 dark:hover:bg-neutral-800/60 transition-colors focus:outline-none flex-shrink-0"
           aria-expanded={isScraperExpanded}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1 rounded bg-white dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1 rounded bg-white dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white flex-shrink-0">
               <Activity className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-                  Scraper Runs (ShedLock)
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 dark:text-white truncate">
+                  Price Check History
                 </span>
                 {lastRun && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white dark:bg-neutral-800 text-emerald-700 dark:text-emerald-400 border border-black dark:border-neutral-700 font-bold">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white dark:bg-neutral-800 text-emerald-700 dark:text-emerald-400 border border-black dark:border-neutral-700 font-bold flex-shrink-0">
                     {lastRun.succeeded} OK
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
-                {lastRun ? `Last: ${new Date(lastRun.started_at).toLocaleTimeString()}` : 'Scheduled Daily @ 08:00'}
+              <p className="text-[11px] text-neutral-500 font-mono mt-0.5 truncate">
+                {lastRun ? `Last checked: ${new Date(lastRun.started_at).toLocaleTimeString()}` : 'Scheduled Daily'}
               </p>
             </div>
           </div>
 
-          <div className="p-1 rounded hover:bg-gray-300/60 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+          <div className="p-1 rounded hover:bg-gray-300/60 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 flex-shrink-0 ml-2">
             <ChevronDown
               className={`w-4 h-4 transition-transform duration-300 ease-in-out ${
                 isScraperExpanded ? 'transform rotate-180 text-black dark:text-white' : ''
@@ -95,7 +94,7 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black border border-black text-xs font-mono font-bold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
                 >
                   <Play className={`w-3 h-3 ${isBatchRunning ? 'animate-spin' : ''}`} />
-                  <span>{isBatchRunning ? 'Running...' : 'Run Batch'}</span>
+                  <span>{isBatchRunning ? 'Checking...' : 'Check All'}</span>
                 </button>
               </div>
 
@@ -107,7 +106,7 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
                     className="p-2.5 rounded bg-gray-50 dark:bg-neutral-900 border border-black/20 dark:border-neutral-800 text-xs font-mono space-y-1"
                   >
                     <div className="flex items-center justify-between font-bold">
-                      <span className="text-neutral-900 dark:text-white">Run #{run.id}</span>
+                      <span className="text-neutral-900 dark:text-white">Price Check</span>
                       <span className="text-neutral-500 font-normal text-[11px]">
                         {new Date(run.started_at).toLocaleString(undefined, {
                           month: 'short',
@@ -139,46 +138,40 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
                   </div>
                 ))}
               </div>
-
-              <div className="text-[10px] font-mono text-neutral-500 pt-1 flex items-center gap-1">
-                <ShieldAlert className="w-3 h-3 flex-shrink-0" />
-                <span>Distributed lock active across instances</span>
-              </div>
-
             </div>
           </div>
         </div>
       </div>
 
       {/* 2. Live Alert Feed Expandable Card */}
-      <div className="rounded-box bg-gray-100 dark:bg-neutral-900 border border-black dark:border-neutral-700 overflow-hidden shadow-tiny">
+      <div className="rounded-box bg-gray-100 dark:bg-neutral-900 border border-black dark:border-neutral-700 overflow-hidden shadow-tiny flex flex-col">
         {/* Clickable Header Button */}
         <button
           type="button"
           onClick={() => setIsAlertsExpanded(!isAlertsExpanded)}
-          className="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-gray-200/60 dark:hover:bg-neutral-800/60 transition-colors focus:outline-none"
+          className="w-full px-4 h-[68px] flex items-center justify-between text-left hover:bg-gray-200/60 dark:hover:bg-neutral-800/60 transition-colors focus:outline-none flex-shrink-0"
           aria-expanded={isAlertsExpanded}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1 rounded bg-white dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1 rounded bg-white dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white flex-shrink-0">
               <Bell className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-                  Live Alert Feed
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-900 dark:text-white truncate">
+                  Price Hike Alerts
                 </span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-black dark:border-neutral-700 font-bold">
-                  {notificationLogs.length} logs
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-black dark:border-neutral-700 font-bold flex-shrink-0">
+                  {notificationLogs.length} alerts
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
-                Idempotent deduplicated price hikes
+              <p className="text-[11px] text-neutral-500 font-mono mt-0.5 truncate">
+                Recent price change notifications
               </p>
             </div>
           </div>
 
-          <div className="p-1 rounded hover:bg-gray-300/60 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+          <div className="p-1 rounded hover:bg-gray-300/60 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 flex-shrink-0 ml-2">
             <ChevronDown
               className={`w-4 h-4 transition-transform duration-300 ease-in-out ${
                 isAlertsExpanded ? 'transform rotate-180 text-black dark:text-white' : ''
@@ -248,12 +241,6 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
                   ))
                 )}
               </div>
-
-              <div className="text-[10px] font-mono text-neutral-500 pt-1 flex items-center gap-1">
-                <ShieldAlert className="w-3 h-3 flex-shrink-0" />
-                <span>UNIQUE(subscription_id, alert_type, price)</span>
-              </div>
-
             </div>
           </div>
         </div>

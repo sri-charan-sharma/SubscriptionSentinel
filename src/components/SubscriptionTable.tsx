@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   AlertOctagon,
@@ -10,7 +10,8 @@ import {
   XCircle,
   Clock,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { Subscription, ScrapeStatus } from '../types';
 
@@ -64,6 +65,66 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   // Set of currently expanded subscription IDs for smooth slide-out details
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
+  // Sorting & Filtering State
+  const [sortKey, setSortKey] = useState<string>('renewal_asc');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const cats = new Set(subscriptions.map(s => s.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [subscriptions]);
+
+  // Filter and sort subscriptions
+  const processedSubscriptions = useMemo(() => {
+    let result = [...subscriptions];
+
+    // Filter by Category
+    if (selectedCategory !== 'ALL') {
+      result = result.filter(s => s.category.toUpperCase() === selectedCategory.toUpperCase());
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortKey) {
+        case 'renewal_asc':
+          return new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime();
+        case 'renewal_desc':
+          return new Date(b.renewal_date).getTime() - new Date(a.renewal_date).getTime();
+        case 'created_desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'price_desc':
+          return b.current_price - a.current_price;
+        case 'price_asc':
+          return a.current_price - b.current_price;
+        case 'category_asc':
+          return a.category.localeCompare(b.category);
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [subscriptions, sortKey, selectedCategory]);
+
+  const toggleSort = (field: 'name' | 'price' | 'renewal' | 'category') => {
+    if (field === 'renewal') {
+      setSortKey(prev => (prev === 'renewal_asc' ? 'renewal_desc' : 'renewal_asc'));
+    } else if (field === 'price') {
+      setSortKey(prev => (prev === 'price_desc' ? 'price_asc' : 'price_desc'));
+    } else if (field === 'name') {
+      setSortKey(prev => (prev === 'name_asc' ? 'name_desc' : 'name_asc'));
+    } else if (field === 'category') {
+      setSortKey(prev => (prev === 'category_asc' ? 'name_asc' : 'category_asc'));
+    }
+  };
+
   const toggleExpand = (id: number) => {
     setExpandedIds(prev => {
       const next = new Set(prev);
@@ -87,25 +148,53 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   };
 
   return (
-    <div className="rounded-box bg-gray-100 dark:bg-neutral-900 border border-black dark:border-neutral-700 overflow-hidden shadow-tiny">
+    <div className="rounded-box bg-gray-100 dark:bg-neutral-900 overflow-hidden shadow-tiny flex-1 flex flex-col">
       
       {/* Table Header / Toolbar */}
-      <div className="px-5 py-4 border-b border-black dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-neutral-950">
-        <div>
-          <h2 className="text-base font-bold font-mono text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <span>Subscriptions</span>
-            <span className="text-xs font-normal text-neutral-500">
-              ({subscriptions.length} active)
-            </span>
-          </h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono mt-0.5">
-            Automated price-hike checks with DOM scraping & SSRF protection
-          </p>
-        </div>
+      <div className="px-5 py-3 border-b border-black dark:border-neutral-700 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-neutral-950">
+        <h2 className="text-base font-bold font-mono text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <span>Subscriptions</span>
+          <span className="text-xs font-normal text-neutral-500">
+            ({processedSubscriptions.length} {selectedCategory !== 'ALL' ? `in ${selectedCategory}` : 'active'})
+          </span>
+        </h2>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-black dark:bg-white" />
-          <span className="font-semibold">LIVE AUDIT</span>
+        {/* Sort & Category Filter Controls */}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+          {/* Category Filter */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700">
+            <span className="text-neutral-500 font-bold uppercase text-[10px]">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-transparent text-neutral-900 dark:text-white font-medium focus:outline-none cursor-pointer text-xs"
+            >
+              <option value="ALL" className="bg-white dark:bg-neutral-900">All</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat} className="bg-white dark:bg-neutral-900">{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort By Selector */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700">
+            <ArrowUpDown className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+            <span className="text-neutral-500 font-bold uppercase text-[10px]">Sort:</span>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value)}
+              className="bg-transparent text-neutral-900 dark:text-white font-medium focus:outline-none cursor-pointer text-xs"
+            >
+              <option value="renewal_asc" className="bg-white dark:bg-neutral-900">Renewal (Soonest)</option>
+              <option value="renewal_desc" className="bg-white dark:bg-neutral-900">Renewal (Furthest)</option>
+              <option value="created_desc" className="bg-white dark:bg-neutral-900">Newest Added</option>
+              <option value="created_asc" className="bg-white dark:bg-neutral-900">Oldest Added</option>
+              <option value="category_asc" className="bg-white dark:bg-neutral-900">Category (A-Z)</option>
+              <option value="price_desc" className="bg-white dark:bg-neutral-900">Price (High to Low)</option>
+              <option value="price_asc" className="bg-white dark:bg-neutral-900">Price (Low to High)</option>
+              <option value="name_asc" className="bg-white dark:bg-neutral-900">Name (A-Z)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -117,22 +206,37 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
               <th className="py-3 px-3 w-12 text-center">
                 <span className="sr-only">Expand</span>
               </th>
-              <th className="py-3 px-4">Service & Category</th>
-              <th className="py-3 px-4">Price & Cycle</th>
-              <th className="py-3 px-4">Next Renewal</th>
+              <th className="py-3 px-4 cursor-pointer hover:text-black dark:hover:text-white transition-colors" onClick={() => toggleSort('name')}>
+                <div className="flex items-center gap-1.5">
+                  <span>Service & Category</span>
+                  <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                </div>
+              </th>
+              <th className="py-3 px-4 cursor-pointer hover:text-black dark:hover:text-white transition-colors" onClick={() => toggleSort('price')}>
+                <div className="flex items-center gap-1.5">
+                  <span>Price & Cycle</span>
+                  <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                </div>
+              </th>
+              <th className="py-3 px-4 cursor-pointer hover:text-black dark:hover:text-white transition-colors" onClick={() => toggleSort('renewal')}>
+                <div className="flex items-center gap-1.5">
+                  <span>Next Renewal</span>
+                  <ArrowUpDown className="w-3 h-3 text-neutral-400" />
+                </div>
+              </th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/10 dark:divide-neutral-800 text-xs font-mono bg-white dark:bg-neutral-950">
-            {subscriptions.length === 0 ? (
+            {processedSubscriptions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-12 text-center text-neutral-500 font-mono text-sm">
-                  No active subscriptions found. Click "NEW SUB" to add one.
+                  {subscriptions.length === 0 ? 'No active subscriptions found. Click "NEW SUB" to add one.' : 'No subscriptions matching selected category.'}
                 </td>
               </tr>
             ) : (
-              subscriptions.map(sub => {
+              processedSubscriptions.map(sub => {
                 const statusCfg = sub.last_scrape_status ? statusBadgeConfig[sub.last_scrape_status] : null;
                 const needsAttention = sub.consecutive_failures >= 5;
                 const upcoming = isUpcoming(sub.renewal_date);
@@ -143,9 +247,9 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                   <React.Fragment key={sub.id}>
                     {/* Primary Row */}
                     <tr
-                      className={`hover:bg-gray-50 dark:hover:bg-neutral-900/60 transition-colors ${
+                      className={`group transition-colors duration-150 hover:bg-gray-100/80 dark:hover:bg-neutral-900/80 ${
                         needsAttention ? 'bg-red-50/60 dark:bg-red-950/20' : ''
-                      } ${isExpanded ? 'bg-gray-50/80 dark:bg-neutral-900/40' : ''}`}
+                      } ${isExpanded ? 'bg-gray-100/90 dark:bg-neutral-900/90 font-medium' : ''}`}
                     >
                       {/* Down Arrow Expand Button */}
                       <td className="py-4 px-3 text-center align-middle">
@@ -183,11 +287,8 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] uppercase px-2 py-0.5 rounded bg-gray-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-black dark:border-neutral-700 font-semibold">
+                            <span className="text-[11px] uppercase px-2 py-0.5 rounded bg-gray-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-black dark:border-neutral-700 font-semibold group-hover:border-black dark:group-hover:border-neutral-400 transition-colors">
                               {sub.category}
-                            </span>
-                            <span className="text-[11px] text-neutral-400">
-                              • ID #{sub.id}
                             </span>
                           </div>
                         </div>

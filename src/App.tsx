@@ -239,14 +239,15 @@ export const App: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
 
           {/* Left Column: 4 Metric Cards */}
-          <aside className="w-full lg:w-80 xl:w-96 flex flex-col flex-1">
-            <MetricCards metrics={metrics} />
-            <div className="flex-1" />
+          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col">
+            <div className="flex-1 flex flex-col">
+              <MetricCards metrics={metrics} />
+            </div>
           </aside>
 
           {/* Right Column: Subscriptions Table + Expandable Telemetry & Alert Feed */}
-          <div className="flex-1 min-w-0 w-full flex flex-col gap-4 h-full">
-            <div className="flex flex-col flex-1">
+          <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+            <div className="flex-1 flex flex-col">
               <SubscriptionTable
                 subscriptions={subscriptions}
                 checkingSubId={checkingSubId}
@@ -300,16 +301,9 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] py-3.5 px-4 sm:px-6 lg:px-8 xl:px-10 mt-6">
-        <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-neutral-500">
-          <div>
-            Subscription Sentinel — Minimalist Recurring Price Engine
-          </div>
-          <div className="flex items-center gap-3">
-            <span>Spring Boot 3 + React + Tailwind</span>
-            <span>•</span>
-            <span>Jsoup + ShedLock + Flyway</span>
-          </div>
+      <footer className="border-t border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] py-3 px-4 sm:px-6 lg:px-8 xl:px-10 mt-6">
+        <div className="w-full flex items-center justify-between text-xs font-mono text-neutral-400">
+          <div>Subscription Sentinel</div>
         </div>
       </footer>
 
