@@ -191,7 +191,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-white dark:bg-[#121214] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-150">
+    <div className="h-[100dvh] max-h-[100dvh] bg-white dark:bg-[#121214] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-150 overflow-hidden">
 
       {/* Toast Alert Banner */}
       {toastMessage && (
@@ -233,21 +233,21 @@ export const App: React.FC = () => {
       />
 
       {/* Main Container - Full Fluid Width */}
-      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-5">
+      <main className="flex-1 min-h-0 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-3 flex flex-col overflow-y-auto lg:overflow-hidden">
 
         {/* Two-Column Layout: Left Metrics Column + Right Subscriptions & Telemetry Block */}
-        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 items-stretch">
 
           {/* Left Column: 4 Metric Cards */}
-          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col">
-            <div className="flex-1 flex flex-col">
+          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               <MetricCards metrics={metrics} />
             </div>
           </aside>
 
           {/* Right Column: Subscriptions Table + Expandable Telemetry & Alert Feed */}
-          <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
-            <div className="flex-1 flex flex-col">
+          <div className="flex-1 min-w-0 w-full flex flex-col gap-3 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               <SubscriptionTable
                 subscriptions={subscriptions}
                 checkingSubId={checkingSubId}
@@ -258,13 +258,15 @@ export const App: React.FC = () => {
                 onDelete={handleDelete}
               />
             </div>
-            <SidebarTelemetry
-              scrapeRuns={recentRuns}
-              notificationLogs={notificationLogs}
-              isBatchRunning={isBatchRunning}
-              onTriggerBatch={handleTriggerBatch}
-              onOpenLogsModal={() => setIsLogsModalOpen(true)}
-            />
+            <div className="flex-shrink-0">
+              <SidebarTelemetry
+                scrapeRuns={recentRuns}
+                notificationLogs={notificationLogs}
+                isBatchRunning={isBatchRunning}
+                onTriggerBatch={handleTriggerBatch}
+                onOpenLogsModal={() => setIsLogsModalOpen(true)}
+              />
+            </div>
           </div>
 
         </div>
@@ -301,7 +303,7 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] py-3 px-4 sm:px-6 lg:px-8 xl:px-10 mt-6">
+      <footer className="flex-shrink-0 border-t border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] py-2.5 px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="w-full flex items-center justify-between text-xs font-mono text-neutral-400">
           <div>Subscription Sentinel</div>
         </div>

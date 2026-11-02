@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onResetDemoData
 }) => {
   return (
-    <header className="border-b border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] sticky top-0 z-40">
+    <header className="border-b border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] sticky top-0 z-40 flex-shrink-0">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         
         {/* Left: Branding */}

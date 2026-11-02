@@ -19,10 +19,10 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
   const primaryCurrency = activeCurrencies.length > 0 ? activeCurrencies[0] : 'USD';
 
   return (
-    <div className="flex flex-col gap-4 w-full h-full justify-between">
+    <div className="flex flex-col gap-3 w-full h-full justify-between min-h-0">
       
       {/* 1. Monthly Burn Card */}
-      <div className="group flex-1 min-h-[110px] rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-5 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
+      <div className="group flex-1 min-h-0 rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-4 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
         <div>
           <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300 mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider">Monthly Burn</span>
@@ -49,7 +49,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
       </div>
 
       {/* 2. Yearly Burn Card */}
-      <div className="group flex-1 min-h-[110px] rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-5 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
+      <div className="group flex-1 min-h-0 rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-4 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
         <div>
           <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300 mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider">Annualized Burn</span>
@@ -76,7 +76,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
       </div>
 
       {/* 3. Active Subscriptions Count */}
-      <div className="group flex-1 min-h-[110px] rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-5 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
+      <div className="group flex-1 min-h-0 rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-4 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
         <div>
           <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300 mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider">Active Targets</span>
@@ -94,7 +94,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
       </div>
 
       {/* 4. Renewals In Next 7 Days */}
-      <div className="group flex-1 min-h-[110px] rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-5 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
+      <div className="group flex-1 min-h-0 rounded-box bg-gray-100 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border border-black dark:border-neutral-700 p-4 shadow-tiny hover:shadow-md flex flex-col justify-center transition-all duration-200 ease-out transform-gpu hover:scale-[1.035] hover:-translate-y-0.5 relative z-0 hover:z-20 cursor-pointer">
         <div>
           <div className="flex items-center justify-between text-neutral-700 dark:text-neutral-300 mb-2">
             <div className="flex items-center gap-2">

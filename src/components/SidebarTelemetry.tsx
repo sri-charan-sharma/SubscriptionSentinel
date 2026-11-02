@@ -80,7 +80,7 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="p-3.5 bg-white dark:bg-neutral-950 border-t border-black dark:border-neutral-700 space-y-3">
+            <div className="p-3 bg-white dark:bg-neutral-950 border-t border-black dark:border-neutral-700 space-y-2.5 max-h-[180px] overflow-y-auto">
               
               {/* Trigger Batch Run action */}
               <div className="flex items-center justify-between pb-2.5 border-b border-black/10 dark:border-neutral-800">
@@ -187,7 +187,7 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="p-3.5 bg-white dark:bg-neutral-950 border-t border-black dark:border-neutral-700 space-y-3">
+            <div className="p-3 bg-white dark:bg-neutral-950 border-t border-black dark:border-neutral-700 space-y-2.5 max-h-[180px] overflow-y-auto">
               
               <div className="flex items-center justify-between pb-2.5 border-b border-black/10 dark:border-neutral-800">
                 <span className="text-[11px] font-mono text-neutral-500">
