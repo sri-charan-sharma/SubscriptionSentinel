@@ -1,18 +1,22 @@
 import React from 'react';
 import { X, PieChart as PieIcon } from 'lucide-react';
-import { Subscription } from '../types';
+import { Subscription, CurrencyCode } from '../types';
 import { CategorySpendChart } from './CategorySpendChart';
 
 interface CategoryChartModalProps {
   isOpen: boolean;
   onClose: () => void;
   subscriptions: Subscription[];
+  baseCurrency?: CurrencyCode;
+  isUnifiedMode?: boolean;
 }
 
 export const CategoryChartModal: React.FC<CategoryChartModalProps> = ({
   isOpen,
   onClose,
-  subscriptions
+  subscriptions,
+  baseCurrency,
+  isUnifiedMode
 }) => {
   if (!isOpen) return null;
 
@@ -45,7 +49,11 @@ export const CategoryChartModal: React.FC<CategoryChartModalProps> = ({
 
         {/* Chart Content */}
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <CategorySpendChart subscriptions={subscriptions} />
+          <CategorySpendChart
+            subscriptions={subscriptions}
+            baseCurrency={baseCurrency}
+            isUnifiedMode={isUnifiedMode}
+          />
         </div>
 
       </div>

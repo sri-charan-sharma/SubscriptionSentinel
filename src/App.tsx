@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   BellRing,
   Activity,
@@ -17,6 +17,13 @@ import { SimulateHikeModal } from './components/SimulateHikeModal';
 import { SidebarTelemetry } from './components/SidebarTelemetry';
 import { CategoryChartModal } from './components/CategoryChartModal';
 import { TelegramAlertModal } from './components/TelegramAlertModal';
+import { CurrencyConverterModal } from './components/CurrencyConverterModal';
+import { AuthModal } from './components/AuthModal';
+import { ProfileSettingsModal } from './components/ProfileSettingsModal';
+import { ExpandedMenuDrawer } from './components/ExpandedMenuDrawer';
+import { currencyService } from './services/currencyService';
+import { authService } from './services/authService';
+import { User } from './types/auth';
 
 export const App: React.FC = () => {
   // Theme state: default to 'light' as requested
@@ -47,7 +54,71 @@ export const App: React.FC = () => {
   const [isSsrfInspectorOpen, setIsSsrfInspectorOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
+  const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [simulateSub, setSimulateSub] = useState<Subscription | null>(null);
+
+  // Expanded Left Menu Drawer State
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuDrawerRef = useRef<HTMLElement>(null);
+
+  // Close drawer on outside click or escape key
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuDrawerRef.current && !menuDrawerRef.current.contains(event.target as Node)) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('button[aria-label="Toggle Menu"]')) {
+          setIsMenuOpen(false);
+        }
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  // User Authentication state
+  const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getUser());
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    showToast('Signed Out', 'You have been logged out of Sentinel', 'info');
+  };
+
+  const handleAuthSuccess = (user: User) => {
+    setCurrentUser(user);
+    showToast('Authenticated', `Welcome back, ${user.email}`, 'success');
+    refreshData();
+  };
+
+  // Currency Conversion state
+  const [baseCurrency, setBaseCurrency] = useState<'USD' | 'EUR' | 'GBP' | 'INR'>(() => currencyService.getBaseCurrency());
+  const [isUnifiedMode, setIsUnifiedMode] = useState<boolean>(() => currencyService.isUnifiedMode());
+
+  const handleSelectBaseCurrency = (curr: 'USD' | 'EUR' | 'GBP' | 'INR') => {
+    setBaseCurrency(curr);
+    currencyService.setBaseCurrency(curr);
+    showToast('Base Currency Set', `Display currency changed to ${curr}`, 'info');
+  };
+
+  const handleToggleUnifiedMode = (enabled: boolean) => {
+    setIsUnifiedMode(enabled);
+    currencyService.setUnifiedMode(enabled);
+    showToast('Currency Mode', enabled ? `Unified conversion to ${baseCurrency} enabled` : 'Native subscription currency mode active', 'info');
+  };
 
   // Sync theme with <html> element
   useEffect(() => {
@@ -226,13 +297,14 @@ export const App: React.FC = () => {
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
-        scrapeSuccessRate={metrics.scrapeSuccessRate30d}
-        lastScrapeRun={recentRuns[0]}
         isBatchRunning={isBatchRunning}
+        baseCurrency={baseCurrency}
+        isMenuOpen={isMenuOpen}
+        onToggleMenu={() => setIsMenuOpen(prev => !prev)}
+        onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
         onTriggerBatch={handleTriggerBatch}
         onOpenAddModal={() => { setEditingSub(null); setIsAddModalOpen(true); }}
         onOpenLogsModal={() => setIsLogsModalOpen(true)}
-        onOpenSsrfInspector={() => setIsSsrfInspectorOpen(true)}
         onOpenCategoryChart={() => setIsCategoryModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         onResetDemoData={handleResetDemoData}
@@ -245,10 +317,26 @@ export const App: React.FC = () => {
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 items-stretch">
 
           {/* Left Column: 4 Metric Cards */}
-          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col min-h-0">
+          <aside ref={menuDrawerRef} className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col min-h-0 relative">
             <div className="flex-1 min-h-0 flex flex-col">
-              <MetricCards metrics={metrics} />
+              <MetricCards
+                metrics={metrics}
+                baseCurrency={baseCurrency}
+                isUnifiedMode={isUnifiedMode}
+                onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+              />
             </div>
+
+            {/* Smooth Expanded Drawer Overlay aligned to Column Top and Bottom (Renewals block) */}
+            <ExpandedMenuDrawer
+              isOpen={isMenuOpen}
+              onClose={() => setIsMenuOpen(false)}
+              user={currentUser}
+              lastScrapeRun={recentRuns[0]}
+              onOpenProfileSettings={() => setIsProfileModalOpen(true)}
+              onLogout={handleLogout}
+              onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            />
           </aside>
 
           {/* Right Column: Subscriptions Table + Expandable Telemetry & Alert Feed */}
@@ -257,6 +345,8 @@ export const App: React.FC = () => {
               <SubscriptionTable
                 subscriptions={subscriptions}
                 checkingSubId={checkingSubId}
+                baseCurrency={baseCurrency}
+                isUnifiedMode={isUnifiedMode}
                 onCheckNow={handleCheckNow}
                 onSimulateHike={(sub) => setSimulateSub(sub)}
                 onOpenHistory={(sub) => setHistorySub(sub)}
@@ -312,11 +402,37 @@ export const App: React.FC = () => {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         subscriptions={subscriptions}
+        baseCurrency={baseCurrency}
+        isUnifiedMode={isUnifiedMode}
       />
 
       <TelegramAlertModal
         isOpen={isTelegramModalOpen}
         onClose={() => setIsTelegramModalOpen(false)}
+      />
+
+      <CurrencyConverterModal
+        isOpen={isCurrencyModalOpen}
+        onClose={() => setIsCurrencyModalOpen(false)}
+        currentBaseCurrency={baseCurrency}
+        onSelectBaseCurrency={handleSelectBaseCurrency}
+        isUnifiedMode={isUnifiedMode}
+        onToggleUnifiedMode={handleToggleUnifiedMode}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
+
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={currentUser}
+        baseCurrency={baseCurrency}
+        onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
       />
 
       {/* Footer */}

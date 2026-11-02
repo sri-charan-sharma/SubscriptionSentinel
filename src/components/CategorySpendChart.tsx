@@ -10,11 +10,14 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { BarChart3, PieChart as PieIcon } from 'lucide-react';
+import { BarChart3, PieChart as PieIcon, ArrowRightLeft } from 'lucide-react';
 import { Subscription, CurrencyCode } from '../types';
+import { currencyService, CURRENCY_SYMBOLS } from '../services/currencyService';
 
 interface CategorySpendChartProps {
   subscriptions: Subscription[];
+  baseCurrency?: CurrencyCode;
+  isUnifiedMode?: boolean;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -33,8 +36,13 @@ const currencySymbols: Record<CurrencyCode, string> = {
   INR: '₹'
 };
 
-export const CategorySpendChart: React.FC<CategorySpendChartProps> = ({ subscriptions }) => {
+export const CategorySpendChart: React.FC<CategorySpendChartProps> = ({
+  subscriptions,
+  baseCurrency = 'INR',
+  isUnifiedMode = true
+}) => {
   const [chartType, setChartType] = useState<'donut' | 'bar'>('donut');
+  const [viewMode, setViewMode] = useState<'unified' | 'native'>(isUnifiedMode ? 'unified' : 'native');
   
   // Available currencies with active spend
   const activeCurrencies = useMemo(() => {
@@ -49,15 +57,21 @@ export const CategorySpendChart: React.FC<CategorySpendChartProps> = ({ subscrip
     return activeCurrencies[0] || 'USD';
   });
 
-  // Calculate monthly spend per category for the selected currency
+  // Calculate monthly spend per category
   const categoryData = useMemo(() => {
-    const filtered = subscriptions.filter(s => s.is_active && s.currency === selectedCurrency);
+    const targetList = subscriptions.filter(s =>
+      s.is_active && (viewMode === 'unified' || s.currency === selectedCurrency)
+    );
     const map = new Map<string, { totalMonthly: number; count: number; items: string[] }>();
 
     let grandTotal = 0;
 
-    filtered.forEach(s => {
-      const monthly = s.billing_cycle === 'MONTHLY' ? s.current_price : s.current_price / 12;
+    targetList.forEach(s => {
+      const monthlyNative = s.billing_cycle === 'MONTHLY' ? s.current_price : s.current_price / 12;
+      const monthly = viewMode === 'unified'
+        ? currencyService.convert(monthlyNative, s.currency, baseCurrency)
+        : monthlyNative;
+
       grandTotal += monthly;
 
       const cat = s.category.toUpperCase();
@@ -81,9 +95,9 @@ export const CategorySpendChart: React.FC<CategorySpendChartProps> = ({ subscrip
     list.sort((a, b) => b.value - a.value);
 
     return { list, grandTotal: Number(grandTotal.toFixed(2)) };
-  }, [subscriptions, selectedCurrency]);
+  }, [subscriptions, viewMode, selectedCurrency, baseCurrency]);
 
-  const symbol = currencySymbols[selectedCurrency] || '$';
+  const symbol = viewMode === 'unified' ? CURRENCY_SYMBOLS[baseCurrency] : (currencySymbols[selectedCurrency] || '$');
 
   return (
     <div className="flex flex-col h-full w-full bg-white dark:bg-neutral-950 p-4 sm:p-5 overflow-y-auto">
@@ -120,33 +134,58 @@ export const CategorySpendChart: React.FC<CategorySpendChartProps> = ({ subscrip
           </button>
         </div>
 
-        {/* Currency Selector (if multiple exist) */}
-        {activeCurrencies.length > 1 && (
-          <div className="flex items-center gap-1.5 text-xs font-mono">
-            <span className="text-neutral-500 font-bold uppercase text-[10px]">Currency:</span>
+        {/* Currency Mode Selector */}
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="flex items-center gap-1 p-0.5 rounded bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={() => setViewMode('unified')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${
+                viewMode === 'unified'
+                  ? 'bg-black text-white dark:bg-white dark:text-black font-bold shadow-sm'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-black'
+              }`}
+            >
+              <ArrowRightLeft className="w-3 h-3 text-emerald-500" />
+              <span>Unified ({baseCurrency})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('native')}
+              className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                viewMode === 'native'
+                  ? 'bg-black text-white dark:bg-white dark:text-black font-bold shadow-sm'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-black'
+              }`}
+            >
+              <span>Native</span>
+            </button>
+          </div>
+
+          {viewMode === 'native' && activeCurrencies.length > 1 && (
             <div className="flex items-center gap-1">
               {activeCurrencies.map(curr => (
                 <button
                   key={curr}
                   type="button"
                   onClick={() => setSelectedCurrency(curr)}
-                  className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors ${
+                  className={`px-2 py-0.5 rounded text-xs font-mono border transition-colors ${
                     selectedCurrency === curr
-                      ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white font-bold'
-                      : 'bg-gray-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-black/20 dark:border-neutral-700 hover:border-black'
+                      ? 'bg-black text-white dark:bg-white dark:text-black border-black font-bold'
+                      : 'bg-gray-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-black/20 hover:border-black'
                   }`}
                 >
                   {curr}
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {categoryData.list.length === 0 ? (
         <div className="py-16 text-center text-neutral-500 font-mono text-xs">
-          No active subscriptions found for {selectedCurrency}.
+          No active subscriptions found for {viewMode === 'unified' ? baseCurrency : selectedCurrency}.
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center flex-1 min-h-0 pt-4">

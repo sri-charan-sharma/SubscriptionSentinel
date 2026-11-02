@@ -1,29 +1,30 @@
 import React from 'react';
 import {
-  ShieldAlert,
-  Activity,
+  Menu,
   Play,
   Plus,
   Bell,
-  Cpu,
   RotateCcw,
   Sun,
   Moon,
   PieChart as PieIcon,
-  Send
+  Send,
+  ArrowRightLeft
 } from 'lucide-react';
-import { ScrapeRun } from '../types';
+import { CurrencyCode } from '../types';
+import { CURRENCY_SYMBOLS } from '../services/currencyService';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  scrapeSuccessRate: number;
-  lastScrapeRun?: ScrapeRun;
   isBatchRunning: boolean;
+  baseCurrency?: CurrencyCode;
+  isMenuOpen?: boolean;
+  onToggleMenu?: () => void;
+  onOpenCurrencyModal?: () => void;
   onTriggerBatch: () => void;
   onOpenAddModal: () => void;
   onOpenLogsModal: () => void;
-  onOpenSsrfInspector: () => void;
   onOpenCategoryChart?: () => void;
   onOpenTelegramModal?: () => void;
   onResetDemoData: () => void;
@@ -32,66 +33,39 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
-  scrapeSuccessRate,
-  lastScrapeRun,
   isBatchRunning,
+  baseCurrency = 'INR',
+  isMenuOpen = false,
+  onToggleMenu,
+  onOpenCurrencyModal,
   onTriggerBatch,
   onOpenAddModal,
   onOpenLogsModal,
-  onOpenSsrfInspector,
   onOpenCategoryChart,
   onOpenTelegramModal,
   onResetDemoData
 }) => {
   return (
     <header className="border-b border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] sticky top-0 z-40 flex-shrink-0">
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-3 flex items-center justify-between gap-4">
         
-        {/* Left: Branding */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-box bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700 flex items-center justify-center">
-            <Cpu className="w-5 h-5 text-neutral-900 dark:text-neutral-100" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold tracking-tight text-neutral-900 dark:text-white font-mono uppercase">
-                Subscription Sentinel
-              </h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-box bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-700 dark:text-neutral-300">
-                v1.0
-              </span>
-            </div>
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono mt-0.5 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-              <span>DAEMON ACTIVE</span>
-              <span>•</span>
-              <span>{lastScrapeRun ? `LAST RUN: ${new Date(lastScrapeRun.finished_at).toLocaleTimeString()}` : 'SHEDLOCK READY'}</span>
-            </p>
-          </div>
+        {/* Left: 3-Liner Menu Button */}
+        <div>
+          <button
+            type="button"
+            onClick={onToggleMenu}
+            className="w-9 h-9 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 flex items-center justify-center transition-colors shadow-tiny cursor-pointer"
+            title="Toggle Menu"
+            aria-label="Toggle Menu"
+            aria-expanded={isMenuOpen}
+          >
+            <Menu className="w-5 h-5 text-neutral-900 dark:text-neutral-100" />
+          </button>
         </div>
 
-        {/* Center/Right: Observability & Action Controls */}
+        {/* Center/Right: Action & Observability Controls */}
         <div className="flex flex-wrap items-center gap-2">
           
-          {/* 30-Day Scrape Success Rate Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700 text-xs font-mono">
-            <Activity className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
-            <span className="text-neutral-600 dark:text-neutral-400">30D SUCCESS:</span>
-            <span className="font-bold text-neutral-900 dark:text-white">
-              {scrapeSuccessRate.toFixed(1)}%
-            </span>
-          </div>
-
-          {/* SSRF Security Inspector */}
-          <button
-            onClick={onOpenSsrfInspector}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
-            title="Inspect SSRF and URL validation protections"
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>SSRF Guard</span>
-          </button>
-
           {/* Deduplicated Notification Logs */}
           <button
             onClick={onOpenLogsModal}
@@ -123,6 +97,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Send className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
               <span>Telegram</span>
+            </button>
+          )}
+
+          {/* Currency Conversion Engine */}
+          {onOpenCurrencyModal && (
+            <button
+              onClick={onOpenCurrencyModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
+              title="Currency Conversion Engine & Rates"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>{baseCurrency} ({CURRENCY_SYMBOLS[baseCurrency]})</span>
             </button>
           )}
 

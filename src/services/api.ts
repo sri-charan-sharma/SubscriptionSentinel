@@ -47,6 +47,17 @@ let scrapeRuns: ScrapeRun[] = loadFromStorage(STORAGE_KEY_RUNS, INITIAL_SCRAPE_R
 
 let isBackendAvailable: boolean | null = null;
 
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('sentinel_jwt_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 async function checkBackendHealth(): Promise<boolean> {
   if (isBackendAvailable !== null) return isBackendAvailable;
   try {
@@ -63,7 +74,7 @@ export const api = {
     const backendOnline = await checkBackendHealth();
     if (backendOnline) {
       try {
-        const res = await fetch('/api/subscriptions');
+        const res = await fetch('/api/subscriptions', { headers: getAuthHeaders() });
         if (res.ok) return await res.json();
       } catch (err) {
         console.warn('Backend fetch failed, using local store', err);
@@ -91,7 +102,7 @@ export const api = {
       try {
         const res = await fetch('/api/subscriptions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(data)
         });
         if (res.ok) return await res.json();
@@ -139,7 +150,7 @@ export const api = {
       try {
         const res = await fetch(`/api/subscriptions/${id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(data)
         });
         if (res.ok) return await res.json();

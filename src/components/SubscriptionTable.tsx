@@ -13,11 +13,14 @@ import {
   ChevronDown,
   ArrowUpDown
 } from 'lucide-react';
-import { Subscription, ScrapeStatus } from '../types';
+import { Subscription, ScrapeStatus, CurrencyCode } from '../types';
+import { currencyService } from '../services/currencyService';
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[];
   checkingSubId: number | null;
+  baseCurrency?: CurrencyCode;
+  isUnifiedMode?: boolean;
   onCheckNow: (id: number) => void;
   onSimulateHike: (sub: Subscription) => void;
   onOpenHistory: (sub: Subscription) => void;
@@ -56,6 +59,8 @@ const statusBadgeConfig: Record<ScrapeStatus, { label: string; text: string; ico
 export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   subscriptions,
   checkingSubId,
+  baseCurrency = 'INR',
+  isUnifiedMode = true,
   onCheckNow,
   onSimulateHike,
   onOpenHistory,
@@ -303,6 +308,18 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                           <span className="text-xs text-neutral-500">
                             {sub.billing_cycle === 'MONTHLY' ? 'per month' : 'per year'}
                           </span>
+                          {isUnifiedMode && baseCurrency && sub.currency !== baseCurrency && (
+                            <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">
+                              ≈ {currencyService.format(
+                                currencyService.convert(
+                                  sub.billing_cycle === 'MONTHLY' ? sub.current_price : sub.current_price / 12,
+                                  sub.currency,
+                                  baseCurrency
+                                ),
+                                baseCurrency
+                              )}/mo
+                            </span>
+                          )}
                         </div>
                       </td>
 
