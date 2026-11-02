@@ -19,6 +19,7 @@ const STORAGE_KEY_SUBS = 'sentinel_subscriptions';
 const STORAGE_KEY_HISTORY = 'sentinel_price_history';
 const STORAGE_KEY_LOGS = 'sentinel_notification_logs';
 const STORAGE_KEY_RUNS = 'sentinel_scrape_runs';
+const STORAGE_KEY_TELEGRAM = 'sentinel_telegram_config';
 
 // Local storage helpers
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -285,6 +286,9 @@ export const api = {
         );
 
         if (!alreadyAlerted) {
+          const tg = api.getTelegramConfig();
+          const channel = (tg.enabled && tg.botToken && tg.chatId) ? 'EMAIL+TELEGRAM' : 'EMAIL';
+
           const logEntry: NotificationLog = {
             id: Date.now(),
             subscription_id: sub.id,
@@ -293,12 +297,19 @@ export const api = {
             old_price: oldPrice,
             price: parsedPrice,
             currency: sub.currency,
-            channel: 'EMAIL',
+            channel: channel,
             status: 'SENT',
             created_at: now
           };
           notificationLogs.unshift(logEntry);
           saveToStorage(STORAGE_KEY_LOGS, notificationLogs);
+
+          // Dispatch real-time Telegram alert if configured
+          if (tg.enabled && tg.botToken && tg.chatId) {
+            api.sendTelegramHikeNotification(sub, parsedPrice, oldPrice).catch(err => {
+              console.warn('Telegram background alert dispatch failed:', err);
+            });
+          }
 
           sub.last_alerted_price = parsedPrice;
           alertTriggered = true;
@@ -455,5 +466,82 @@ export const api = {
     saveToStorage(STORAGE_KEY_HISTORY, priceHistories);
     saveToStorage(STORAGE_KEY_LOGS, notificationLogs);
     saveToStorage(STORAGE_KEY_RUNS, scrapeRuns);
+  },
+
+  getTelegramConfig(): { botToken: string; chatId: string; enabled: boolean } {
+    return loadFromStorage(STORAGE_KEY_TELEGRAM, {
+      botToken: (import.meta as any).env?.VITE_TELEGRAM_BOT_TOKEN || '',
+      chatId: (import.meta as any).env?.VITE_TELEGRAM_CHAT_ID || '',
+      enabled: true
+    });
+  },
+
+  saveTelegramConfig(cfg: { botToken: string; chatId: string; enabled: boolean }): void {
+    saveToStorage(STORAGE_KEY_TELEGRAM, cfg);
+  },
+
+  async sendTelegramTestMessage(botToken: string, chatId: string): Promise<{ success: boolean; error?: string }> {
+    const text = '🛡️ *Subscription Sentinel Test Alert*\n\n' +
+      '✅ *Telegram Bot is connected successfully!*\n' +
+      'Real-time price-hike alerts will be delivered here.';
+
+    try {
+      const url = `https://api.telegram.org/bot${botToken.trim()}/sendMessage`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId.trim(),
+          text,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: data.description || 'Telegram rejected the message. Verify bot token and ensure you started your bot.'
+        };
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Network error reaching Telegram API.' };
+    }
+  },
+
+  async sendTelegramHikeNotification(sub: Subscription, newPrice: number, oldPrice: number): Promise<boolean> {
+    const cfg = this.getTelegramConfig();
+    if (!cfg.enabled || !cfg.botToken || !cfg.chatId) return false;
+
+    const diff = newPrice - oldPrice;
+    const pct = oldPrice > 0 ? ((diff / oldPrice) * 100).toFixed(1) : '0';
+
+    const text = `🚨 *PRICE HIKE DETECTED*\n\n` +
+      `Subscription Sentinel observed a silent price increase for *${sub.name}*!\n\n` +
+      `📂 *Category:* \`${sub.category}\`\n` +
+      `💰 *Old Price:* ${sub.currency} ${oldPrice.toFixed(2)}\n` +
+      `📈 *New Price:* *${sub.currency} ${newPrice.toFixed(2)}* (+${pct}%)\n` +
+      `🔄 *Billing Cycle:* ${sub.billing_cycle}\n` +
+      `🌐 *Pricing Page:* [View Official Site](${sub.pricing_url})\n\n` +
+      `🛡️ _Audited by Subscription Sentinel Daemon_`;
+
+    try {
+      const url = `https://api.telegram.org/bot${cfg.botToken.trim()}/sendMessage`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: cfg.chatId.trim(),
+          text,
+          parse_mode: 'Markdown'
+        })
+      });
+      const data = await res.json();
+      return !!(res.ok && data.ok);
+    } catch {
+      return false;
+    }
   }
 };

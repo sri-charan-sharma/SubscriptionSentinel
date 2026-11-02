@@ -198,7 +198,7 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
         </div>
       </div>
 
-      {/* Table Body */}
+      {/* Subscriptions Table */}
       <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-neutral-900">

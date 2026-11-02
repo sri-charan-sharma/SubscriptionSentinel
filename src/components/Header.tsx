@@ -8,7 +8,9 @@ import {
   Cpu,
   RotateCcw,
   Sun,
-  Moon
+  Moon,
+  PieChart as PieIcon,
+  Send
 } from 'lucide-react';
 import { ScrapeRun } from '../types';
 
@@ -22,6 +24,8 @@ interface HeaderProps {
   onOpenAddModal: () => void;
   onOpenLogsModal: () => void;
   onOpenSsrfInspector: () => void;
+  onOpenCategoryChart?: () => void;
+  onOpenTelegramModal?: () => void;
   onResetDemoData: () => void;
 }
 
@@ -35,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAddModal,
   onOpenLogsModal,
   onOpenSsrfInspector,
+  onOpenCategoryChart,
+  onOpenTelegramModal,
   onResetDemoData
 }) => {
   return (
@@ -95,6 +101,30 @@ export const Header: React.FC<HeaderProps> = ({
             <Bell className="w-3.5 h-3.5" />
             <span>Alert Logs</span>
           </button>
+
+          {/* Spending Breakdown Chart Modal */}
+          {onOpenCategoryChart && (
+            <button
+              onClick={onOpenCategoryChart}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
+              title="View spending by category breakdown chart"
+            >
+              <PieIcon className="w-3.5 h-3.5" />
+              <span>Category Chart</span>
+            </button>
+          )}
+
+          {/* Telegram Bot Alerts */}
+          {onOpenTelegramModal && (
+            <button
+              onClick={onOpenTelegramModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
+              title="Configure and test Telegram push alerts"
+            >
+              <Send className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              <span>Telegram</span>
+            </button>
+          )}
 
           {/* Trigger Scheduled Batch Scrape */}
           <button

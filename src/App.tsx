@@ -15,6 +15,8 @@ import { NotificationLogsModal } from './components/NotificationLogsModal';
 import { UrlSafetyInspectorModal } from './components/UrlSafetyInspectorModal';
 import { SimulateHikeModal } from './components/SimulateHikeModal';
 import { SidebarTelemetry } from './components/SidebarTelemetry';
+import { CategoryChartModal } from './components/CategoryChartModal';
+import { TelegramAlertModal } from './components/TelegramAlertModal';
 
 export const App: React.FC = () => {
   // Theme state: default to 'light' as requested
@@ -43,6 +45,8 @@ export const App: React.FC = () => {
   const [historySub, setHistorySub] = useState<Subscription | null>(null);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [isSsrfInspectorOpen, setIsSsrfInspectorOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [simulateSub, setSimulateSub] = useState<Subscription | null>(null);
 
   // Sync theme with <html> element
@@ -229,6 +233,8 @@ export const App: React.FC = () => {
         onOpenAddModal={() => { setEditingSub(null); setIsAddModalOpen(true); }}
         onOpenLogsModal={() => setIsLogsModalOpen(true)}
         onOpenSsrfInspector={() => setIsSsrfInspectorOpen(true)}
+        onOpenCategoryChart={() => setIsCategoryModalOpen(true)}
+        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         onResetDemoData={handleResetDemoData}
       />
 
@@ -300,6 +306,17 @@ export const App: React.FC = () => {
         subscription={simulateSub}
         onClose={() => setSimulateSub(null)}
         onSimulate={handleSimulateEvent}
+      />
+
+      <CategoryChartModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        subscriptions={subscriptions}
+      />
+
+      <TelegramAlertModal
+        isOpen={isTelegramModalOpen}
+        onClose={() => setIsTelegramModalOpen(false)}
       />
 
       {/* Footer */}

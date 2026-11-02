@@ -41,7 +41,7 @@ export interface NotificationLog {
   old_price: number;
   price: number;
   currency: CurrencyCode;
-  channel: 'EMAIL';
+  channel: 'EMAIL' | 'TELEGRAM' | 'EMAIL+TELEGRAM' | string;
   status: 'PENDING' | 'SENT' | 'FAILED';
   created_at: string;
 }
