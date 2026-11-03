@@ -198,7 +198,7 @@ export const SidebarTelemetry: React.FC<SidebarTelemetryProps> = ({
                   onClick={onOpenLogsModal}
                   className="text-xs font-mono text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white underline flex items-center gap-1 font-medium"
                 >
-                  <span>Full Ledger</span>
+                  <span>View All Logs</span>
                   <ExternalLink className="w-3 h-3" />
                 </button>
               </div>

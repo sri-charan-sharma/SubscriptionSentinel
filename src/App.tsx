@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   BellRing,
   Activity,
@@ -21,6 +21,7 @@ import { CurrencyConverterModal } from './components/CurrencyConverterModal';
 import { AuthModal } from './components/AuthModal';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { ExpandedMenuDrawer } from './components/ExpandedMenuDrawer';
+import { LandingPage } from './components/LandingPage';
 import { currencyService } from './services/currencyService';
 import { authService } from './services/authService';
 import { User } from './types/auth';
@@ -59,38 +60,33 @@ export const App: React.FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [simulateSub, setSimulateSub] = useState<Subscription | null>(null);
 
-  // Expanded Left Menu Drawer State
+  // App View state: 'landing' (public marketing page) or 'dashboard'
+  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>(() => {
+    const saved = localStorage.getItem('sentinel_view');
+    return saved === 'dashboard' ? 'dashboard' : 'landing';
+  });
+
+  const handleSetView = (view: 'landing' | 'dashboard') => {
+    setCurrentView(view);
+    localStorage.setItem('sentinel_view', view);
+  };
+
+  // GitHub-style Left Navigation Drawer State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuDrawerRef = useRef<HTMLElement>(null);
-
-  // Close drawer on outside click or escape key
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuDrawerRef.current && !menuDrawerRef.current.contains(event.target as Node)) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('button[aria-label="Toggle Menu"]')) {
-          setIsMenuOpen(false);
-        }
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMenuOpen(false);
-      }
-    };
-
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMenuOpen]);
 
   // User Authentication state
   const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getUser());
+  const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+
+  const handleOpenLogin = () => {
+    setAuthModalMode('LOGIN');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleOpenSignUp = () => {
+    setAuthModalMode('REGISTER');
+    setIsAuthModalOpen(true);
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -101,6 +97,7 @@ export const App: React.FC = () => {
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
     showToast('Authenticated', `Welcome back, ${user.email}`, 'success');
+    handleSetView('dashboard');
     refreshData();
   };
 
@@ -265,6 +262,55 @@ export const App: React.FC = () => {
     }
   };
 
+  // Render Landing Page if currentView is 'landing'
+  if (currentView === 'landing') {
+    return (
+      <div className="min-h-screen bg-[#fafafa] dark:bg-[#0e1015] text-neutral-900 dark:text-neutral-100">
+        {/* Toast Alert Banner */}
+        {toastMessage && (
+          <div className="fixed top-14 right-4 z-50 max-w-md w-full">
+            <div className="p-3.5 rounded-box border border-black bg-white dark:bg-neutral-900 shadow-md flex items-start gap-3">
+              {toastMessage.type === 'alert' && <BellRing className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />}
+              {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />}
+              {toastMessage.type === 'info' && <Activity className="w-4 h-4 text-neutral-700 dark:text-neutral-300 flex-shrink-0 mt-0.5" />}
+              <div className="flex-1">
+                <h4 className="text-xs font-bold font-mono uppercase">
+                  {toastMessage.title}
+                </h4>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 font-sans">
+                  {toastMessage.desc}
+                </p>
+              </div>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="text-neutral-400 hover:text-black dark:hover:text-white text-xs font-mono"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        <LandingPage
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          user={currentUser}
+          onOpenLogin={handleOpenLogin}
+          onOpenSignUp={handleOpenSignUp}
+          onEnterDashboard={() => handleSetView('dashboard')}
+          onLogout={handleLogout}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          initialMode={authModalMode}
+          onClose={() => setIsAuthModalOpen(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-[100dvh] max-h-[100dvh] bg-white dark:bg-[#121214] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-150 overflow-hidden">
 
@@ -298,16 +344,13 @@ export const App: React.FC = () => {
         theme={theme}
         onToggleTheme={toggleTheme}
         isBatchRunning={isBatchRunning}
-        baseCurrency={baseCurrency}
         isMenuOpen={isMenuOpen}
         onToggleMenu={() => setIsMenuOpen(prev => !prev)}
-        onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
         onTriggerBatch={handleTriggerBatch}
         onOpenAddModal={() => { setEditingSub(null); setIsAddModalOpen(true); }}
-        onOpenLogsModal={() => setIsLogsModalOpen(true)}
         onOpenCategoryChart={() => setIsCategoryModalOpen(true)}
-        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         onResetDemoData={handleResetDemoData}
+        onNavigateToLanding={() => handleSetView('landing')}
       />
 
       {/* Main Container - Full Fluid Width */}
@@ -317,7 +360,7 @@ export const App: React.FC = () => {
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 items-stretch">
 
           {/* Left Column: 4 Metric Cards */}
-          <aside ref={menuDrawerRef} className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col min-h-0 relative">
+          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col min-h-0">
             <div className="flex-1 min-h-0 flex flex-col">
               <MetricCards
                 metrics={metrics}
@@ -326,17 +369,6 @@ export const App: React.FC = () => {
                 onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
               />
             </div>
-
-            {/* Smooth Expanded Drawer Overlay aligned to Column Top and Bottom (Renewals block) */}
-            <ExpandedMenuDrawer
-              isOpen={isMenuOpen}
-              onClose={() => setIsMenuOpen(false)}
-              user={currentUser}
-              lastScrapeRun={recentRuns[0]}
-              onOpenProfileSettings={() => setIsProfileModalOpen(true)}
-              onLogout={handleLogout}
-              onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            />
           </aside>
 
           {/* Right Column: Subscriptions Table + Expandable Telemetry & Alert Feed */}
@@ -369,7 +401,21 @@ export const App: React.FC = () => {
 
       </main>
 
-      {/* Modals */}
+      {/* Modals & Drawers */}
+      <ExpandedMenuDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        user={currentUser}
+        lastScrapeRun={recentRuns[0]}
+        onNavigateToLanding={() => handleSetView('landing')}
+        onOpenProfileSettings={() => setIsProfileModalOpen(true)}
+        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+        onOpenLogsModal={() => setIsLogsModalOpen(true)}
+        onLogout={handleLogout}
+        onOpenAuthModal={handleOpenLogin}
+      />
+
       <SubscriptionModal
         isOpen={isAddModalOpen}
         subscriptionToEdit={editingSub}
@@ -422,6 +468,7 @@ export const App: React.FC = () => {
 
       <AuthModal
         isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleAuthSuccess}
       />
@@ -438,7 +485,8 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="flex-shrink-0 border-t border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] py-2.5 px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="w-full flex items-center justify-between text-xs font-mono text-neutral-400">
-          <div>Subscription Sentinel</div>
+          <div>Subscription Sentinel • Automated Price & Renewal Monitor</div>
+          <div className="text-[11px] text-neutral-500">v1.0.4</div>
         </div>
       </footer>
 

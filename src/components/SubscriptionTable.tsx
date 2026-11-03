@@ -426,7 +426,7 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                 <div className="p-4 bg-white dark:bg-neutral-950 rounded-box border border-black dark:border-neutral-700 shadow-micro flex flex-col justify-between">
                                   <div>
                                     <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block mb-2">
-                                      DOM Scraping Diagnostics
+                                      Price Check Diagnostics
                                     </span>
                                     {sub.last_scrape_status === 'OK' && sub.last_raw_match ? (
                                       <div className="p-2.5 rounded bg-gray-50 dark:bg-neutral-900 border border-black/20 dark:border-neutral-800 text-xs font-mono text-neutral-900 dark:text-white">
@@ -469,10 +469,10 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
 
                                   <div>
                                     <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block mb-1">
-                                      Configured CSS Selector (Jsoup)
+                                      Price CSS Selector
                                     </span>
                                     <code className="text-xs font-mono px-2.5 py-1 rounded bg-gray-50 dark:bg-neutral-900 border border-black/20 dark:border-neutral-800 block truncate text-neutral-800 dark:text-neutral-200">
-                                      {sub.price_selector || 'Auto-detect (.price, [data-price])'}
+                                      {sub.price_selector || 'Automatic detection'}
                                     </code>
                                   </div>
                                 </div>
@@ -480,7 +480,7 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                 {/* Box 3: Resilience & Alert Metadata */}
                                 <div className="p-4 bg-white dark:bg-neutral-950 rounded-box border border-black dark:border-neutral-700 shadow-micro space-y-2.5">
                                   <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block">
-                                    Sentinel Resilience Status
+                                    Monitor Health & Status
                                   </span>
 
                                   <div className="flex items-center justify-between text-xs font-mono pt-1">

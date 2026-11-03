@@ -3,54 +3,44 @@ import {
   Menu,
   Play,
   Plus,
-  Bell,
   RotateCcw,
   Sun,
   Moon,
-  PieChart as PieIcon,
-  Send,
-  ArrowRightLeft
+  Shield,
+  PieChart as PieIcon
 } from 'lucide-react';
-import { CurrencyCode } from '../types';
-import { CURRENCY_SYMBOLS } from '../services/currencyService';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   isBatchRunning: boolean;
-  baseCurrency?: CurrencyCode;
   isMenuOpen?: boolean;
   onToggleMenu?: () => void;
-  onOpenCurrencyModal?: () => void;
   onTriggerBatch: () => void;
   onOpenAddModal: () => void;
-  onOpenLogsModal: () => void;
   onOpenCategoryChart?: () => void;
-  onOpenTelegramModal?: () => void;
   onResetDemoData: () => void;
+  onNavigateToLanding?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
   isBatchRunning,
-  baseCurrency = 'INR',
   isMenuOpen = false,
   onToggleMenu,
-  onOpenCurrencyModal,
   onTriggerBatch,
   onOpenAddModal,
-  onOpenLogsModal,
   onOpenCategoryChart,
-  onOpenTelegramModal,
-  onResetDemoData
+  onResetDemoData,
+  onNavigateToLanding
 }) => {
   return (
     <header className="border-b border-black dark:border-neutral-800 bg-white dark:bg-[#16181d] sticky top-0 z-40 flex-shrink-0">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-3 flex items-center justify-between gap-4">
         
-        {/* Left: 3-Liner Menu Button */}
-        <div>
+        {/* Left: 3-Liner Menu Button & Brand Link */}
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onToggleMenu}
@@ -61,54 +51,32 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Menu className="w-5 h-5 text-neutral-900 dark:text-neutral-100" />
           </button>
+
+          {onNavigateToLanding && (
+            <button
+              type="button"
+              onClick={onNavigateToLanding}
+              className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-box bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-white font-mono font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              title="Return to Landing Page"
+            >
+              <Shield className="w-4 h-4" />
+              <span>SUBSENT</span>
+            </button>
+          )}
         </div>
 
         {/* Center/Right: Action & Observability Controls */}
         <div className="flex flex-wrap items-center gap-2">
           
-          {/* Deduplicated Notification Logs */}
-          <button
-            onClick={onOpenLogsModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
-            title="View idempotent notification delivery log"
-          >
-            <Bell className="w-3.5 h-3.5" />
-            <span>Alert Logs</span>
-          </button>
-
           {/* Spending Breakdown Chart Modal */}
           {onOpenCategoryChart && (
             <button
               onClick={onOpenCategoryChart}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors cursor-pointer"
               title="View spending by category breakdown chart"
             >
               <PieIcon className="w-3.5 h-3.5" />
-              <span>Category Chart</span>
-            </button>
-          )}
-
-          {/* Telegram Bot Alerts */}
-          {onOpenTelegramModal && (
-            <button
-              onClick={onOpenTelegramModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
-              title="Configure and test Telegram push alerts"
-            >
-              <Send className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-              <span>Telegram</span>
-            </button>
-          )}
-
-          {/* Currency Conversion Engine */}
-          {onOpenCurrencyModal && (
-            <button
-              onClick={onOpenCurrencyModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
-              title="Currency Conversion Engine & Rates"
-            >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>{baseCurrency} ({CURRENCY_SYMBOLS[baseCurrency]})</span>
+              <span>Spend Chart</span>
             </button>
           )}
 
@@ -116,17 +84,17 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onTriggerBatch}
             disabled={isBatchRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors disabled:opacity-50"
-            title="Trigger scheduled batch run now"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors disabled:opacity-50 cursor-pointer"
+            title="Check all subscription prices right now"
           >
             <Play className={`w-3.5 h-3.5 ${isBatchRunning ? 'animate-spin' : ''}`} />
-            <span>{isBatchRunning ? 'RUNNING...' : 'RUN BATCH'}</span>
+            <span>{isBatchRunning ? 'Checking...' : 'Check All'}</span>
           </button>
 
           {/* Light / Dark Mode Toggle */}
           <button
             onClick={onToggleTheme}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white transition-colors cursor-pointer"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
             {theme === 'dark' ? (
@@ -145,16 +113,17 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Add Subscription Button */}
           <button
             onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-box bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black border border-black dark:border-white text-xs font-mono font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-box bg-black dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black border border-black dark:border-white text-xs font-mono font-bold transition-colors cursor-pointer"
+            title="Add a new subscription to monitor"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>NEW SUB</span>
+            <span>Add Subscription</span>
           </button>
 
           {/* Reset Demo Data */}
           <button
             onClick={onResetDemoData}
-            className="p-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+            className="p-1.5 rounded-box bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-black dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors cursor-pointer"
             title="Reset to default prototype data"
           >
             <RotateCcw className="w-3.5 h-3.5" />
