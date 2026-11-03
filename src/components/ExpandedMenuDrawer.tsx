@@ -10,7 +10,11 @@ import {
   LogOut,
   LogIn,
   Shield,
-  User as UserIcon
+  User as UserIcon,
+  Calendar,
+  Gauge,
+  Skull,
+  Webhook
 } from 'lucide-react';
 import { User } from '../types/auth';
 import { ScrapeRun } from '../types';
@@ -20,10 +24,14 @@ interface ExpandedMenuDrawerProps {
   onClose: () => void;
   user?: User | null;
   lastScrapeRun?: ScrapeRun;
+  zombieCount?: number;
   onNavigateToLanding?: () => void;
   onOpenProfileSettings?: () => void;
   onOpenTelegramModal?: () => void;
+  onOpenWebhookModal?: () => void;
   onOpenCurrencyModal?: () => void;
+  onOpenCalendarModal?: () => void;
+  onOpenBudgetZombieModal?: () => void;
   onOpenLogsModal?: () => void;
   onLogout?: () => void;
   onOpenAuthModal?: () => void;
@@ -34,10 +42,14 @@ export const ExpandedMenuDrawer: React.FC<ExpandedMenuDrawerProps> = ({
   onClose,
   user,
   lastScrapeRun,
+  zombieCount = 0,
   onNavigateToLanding,
   onOpenProfileSettings,
   onOpenTelegramModal,
+  onOpenWebhookModal,
   onOpenCurrencyModal,
+  onOpenCalendarModal,
+  onOpenBudgetZombieModal,
   onOpenLogsModal,
   onLogout,
   onOpenAuthModal
@@ -193,6 +205,19 @@ export const ExpandedMenuDrawer: React.FC<ExpandedMenuDrawerProps> = ({
               <span>Telegram Alerts</span>
             </button>
 
+            {/* 4. Discord & Slack Webhooks */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenWebhookModal?.();
+              }}
+              className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-box bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800/80 font-bold uppercase tracking-wider text-left transition-all duration-200 ease-in-out cursor-pointer text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white"
+            >
+              <Webhook className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-black dark:group-hover:text-white transition-colors duration-200 flex-shrink-0" />
+              <span>Webhooks (Discord & Slack)</span>
+            </button>
+
             {/* 5. Currency Converter */}
             <button
               type="button"
@@ -206,7 +231,41 @@ export const ExpandedMenuDrawer: React.FC<ExpandedMenuDrawerProps> = ({
               <span>Currency Converter</span>
             </button>
 
-            {/* 6. Alert Logs */}
+            {/* 6. Budget & Zombie Hunter */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenBudgetZombieModal?.();
+              }}
+              className="group w-full flex items-center justify-between px-3 py-2.5 rounded-box bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800/80 font-bold uppercase tracking-wider text-left transition-all duration-200 ease-in-out cursor-pointer text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white"
+            >
+              <div className="flex items-center gap-3">
+                <Gauge className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-black dark:group-hover:text-white transition-colors duration-200 flex-shrink-0" />
+                <span>Spend Cap & Zombies</span>
+              </div>
+              {zombieCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-600 text-white flex items-center gap-0.5">
+                  <Skull className="w-2.5 h-2.5" />
+                  {zombieCount}
+                </span>
+              )}
+            </button>
+
+            {/* 7. Calendar Sync (.ics) */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenCalendarModal?.();
+              }}
+              className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-box bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800/80 font-bold uppercase tracking-wider text-left transition-all duration-200 ease-in-out cursor-pointer text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white"
+            >
+              <Calendar className="w-4 h-4 text-neutral-500 dark:text-neutral-400 group-hover:text-black dark:group-hover:text-white transition-colors duration-200 flex-shrink-0" />
+              <span>Calendar Sync (.ics)</span>
+            </button>
+
+            {/* 7. Alert Logs */}
             <button
               type="button"
               onClick={() => {

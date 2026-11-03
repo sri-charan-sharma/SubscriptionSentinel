@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   BellRing,
   Activity,
   CheckCircle2
 } from 'lucide-react';
-import { Subscription, DashboardMetrics, ScrapeRun, ScrapeStatus, NotificationLog } from './types';
+import { Subscription, DashboardMetrics, ScrapeRun, ScrapeStatus, NotificationLog, PriceHistory } from './types';
 import { api } from './services/api';
 import { Header } from './components/Header';
 import { MetricCards } from './components/MetricCards';
@@ -18,11 +18,17 @@ import { SidebarTelemetry } from './components/SidebarTelemetry';
 import { CategoryChartModal } from './components/CategoryChartModal';
 import { TelegramAlertModal } from './components/TelegramAlertModal';
 import { CurrencyConverterModal } from './components/CurrencyConverterModal';
+import { CalendarSyncModal } from './components/CalendarSyncModal';
+import { DomInspectorModal } from './components/DomInspectorModal';
+import { BudgetZombieModal } from './components/BudgetZombieModal';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { WebhookConfigModal } from './components/WebhookConfigModal';
 import { AuthModal } from './components/AuthModal';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { ExpandedMenuDrawer } from './components/ExpandedMenuDrawer';
 import { LandingPage } from './components/LandingPage';
 import { currencyService } from './services/currencyService';
+import { budgetZombieService } from './services/budgetZombieService';
 import { authService } from './services/authService';
 import { User } from './types/auth';
 
@@ -43,6 +49,7 @@ export const App: React.FC = () => {
   });
   const [recentRuns, setRecentRuns] = useState<ScrapeRun[]>([]);
   const [notificationLogs, setNotificationLogs] = useState<NotificationLog[]>([]);
+  const [priceHistories, setPriceHistories] = useState<PriceHistory[]>([]);
   const [checkingSubId, setCheckingSubId] = useState<number | null>(null);
   const [isBatchRunning, setIsBatchRunning] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string; type: 'success' | 'alert' | 'info' } | null>(null);
@@ -56,6 +63,12 @@ export const App: React.FC = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [isBudgetZombieModalOpen, setIsBudgetZombieModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
+  const [spendCap, setSpendCap] = useState<number | null>(() => budgetZombieService.getMonthlySpendCap());
+  const [inspectorSub, setInspectorSub] = useState<Subscription | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [simulateSub, setSimulateSub] = useState<Subscription | null>(null);
@@ -131,6 +144,18 @@ export const App: React.FC = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  // Global Command Palette hotkey: Ctrl+K or Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const showToast = (title: string, desc: string, type: 'success' | 'alert' | 'info' = 'info') => {
     setToastMessage({ title, desc, type });
     setTimeout(() => {
@@ -140,16 +165,18 @@ export const App: React.FC = () => {
 
   const refreshData = useCallback(async () => {
     try {
-      const [subs, dashMetrics, runs, logs] = await Promise.all([
+      const [subs, dashMetrics, runs, logs, histories] = await Promise.all([
         api.getSubscriptions(),
         api.getDashboardMetrics(),
         api.getScrapeRuns(),
-        api.getNotificationLogs()
+        api.getNotificationLogs(),
+        api.getAllPriceHistories()
       ]);
       setSubscriptions(subs);
       setMetrics(dashMetrics);
       setRecentRuns(runs);
       setNotificationLogs(logs);
+      setPriceHistories(histories);
     } catch (e) {
       console.error('Failed to load sentinel data', e);
     }
@@ -158,6 +185,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // Compute Zombie subscriptions
+  const zombieItems = useMemo(() => {
+    return budgetZombieService.detectZombieSubscriptions(subscriptions, priceHistories, baseCurrency);
+  }, [subscriptions, priceHistories, baseCurrency]);
+  const zombieCount = zombieItems.length;
 
   // Action: Single subscription manual check
   const handleCheckNow = async (id: number) => {
@@ -251,6 +284,18 @@ export const App: React.FC = () => {
         result.scrapeResult.error || `Recorded new state for ${result.subscription.name}`,
         result.scrapeResult.status === 'OK' ? 'success' : 'alert'
       );
+    }
+  };
+
+  // Action: Update CSS Selector from DOM Inspector
+  const handleUpdateSelector = async (subId: number, newSelector: string) => {
+    try {
+      const updated = await api.updateSubscription(subId, { price_selector: newSelector });
+      showToast('Selector Updated', `Saved selector "${newSelector}" for ${updated.name}`, 'success');
+      await refreshData();
+      setInspectorSub(updated);
+    } catch (err: any) {
+      showToast('Update Failed', err.message || 'Failed updating selector', 'alert');
     }
   };
 
@@ -349,8 +394,12 @@ export const App: React.FC = () => {
         onTriggerBatch={handleTriggerBatch}
         onOpenAddModal={() => { setEditingSub(null); setIsAddModalOpen(true); }}
         onOpenCategoryChart={() => setIsCategoryModalOpen(true)}
+        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
+        onOpenBudgetZombieModal={() => setIsBudgetZombieModalOpen(true)}
+        zombieCount={zombieCount}
         onResetDemoData={handleResetDemoData}
         onNavigateToLanding={() => handleSetView('landing')}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {/* Main Container - Full Fluid Width */}
@@ -366,7 +415,10 @@ export const App: React.FC = () => {
                 metrics={metrics}
                 baseCurrency={baseCurrency}
                 isUnifiedMode={isUnifiedMode}
+                spendCap={spendCap}
+                zombieCount={zombieCount}
                 onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+                onOpenBudgetZombieModal={() => setIsBudgetZombieModalOpen(true)}
               />
             </div>
           </aside>
@@ -382,6 +434,7 @@ export const App: React.FC = () => {
                 onCheckNow={handleCheckNow}
                 onSimulateHike={(sub) => setSimulateSub(sub)}
                 onOpenHistory={(sub) => setHistorySub(sub)}
+                onOpenDomInspector={(sub) => setInspectorSub(sub)}
                 onEdit={(sub) => { setEditingSub(sub); setIsAddModalOpen(true); }}
                 onDelete={handleDelete}
               />
@@ -407,10 +460,14 @@ export const App: React.FC = () => {
         onClose={() => setIsMenuOpen(false)}
         user={currentUser}
         lastScrapeRun={recentRuns[0]}
+        zombieCount={zombieCount}
         onNavigateToLanding={() => handleSetView('landing')}
         onOpenProfileSettings={() => setIsProfileModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenWebhookModal={() => setIsWebhookModalOpen(true)}
         onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+        onOpenBudgetZombieModal={() => setIsBudgetZombieModalOpen(true)}
+        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
         onOpenLogsModal={() => setIsLogsModalOpen(true)}
         onLogout={handleLogout}
         onOpenAuthModal={handleOpenLogin}
@@ -466,6 +523,35 @@ export const App: React.FC = () => {
         onToggleUnifiedMode={handleToggleUnifiedMode}
       />
 
+      <CalendarSyncModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        subscriptions={subscriptions}
+      />
+
+      <DomInspectorModal
+        isOpen={Boolean(inspectorSub)}
+        subscription={inspectorSub}
+        onClose={() => setInspectorSub(null)}
+        onUpdateSelector={handleUpdateSelector}
+        onCheckNow={(id) => {
+          handleCheckNow(id);
+          setTimeout(() => {
+            const updated = subscriptions.find(s => s.id === id);
+            if (updated) setInspectorSub(updated);
+          }, 300);
+        }}
+      />
+
+      <BudgetZombieModal
+        isOpen={isBudgetZombieModalOpen}
+        onClose={() => setIsBudgetZombieModalOpen(false)}
+        subscriptions={subscriptions}
+        priceHistories={priceHistories}
+        baseCurrency={baseCurrency}
+        onSpendCapUpdated={(newCap) => setSpendCap(newCap)}
+      />
+
       <AuthModal
         isOpen={isAuthModalOpen}
         initialMode={authModalMode}
@@ -480,6 +566,33 @@ export const App: React.FC = () => {
         baseCurrency={baseCurrency}
         onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenWebhookModal={() => setIsWebhookModalOpen(true)}
+      />
+
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        subscriptions={subscriptions}
+        baseCurrency={baseCurrency}
+        onOpenAddModal={() => { setEditingSub(null); setIsAddModalOpen(true); }}
+        onOpenCategoryChart={() => setIsCategoryModalOpen(true)}
+        onOpenCalendarModal={() => setIsCalendarModalOpen(true)}
+        onOpenBudgetZombieModal={() => setIsBudgetZombieModalOpen(true)}
+        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenWebhookModal={() => setIsWebhookModalOpen(true)}
+        onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+        onTriggerBatch={handleTriggerBatch}
+        onToggleTheme={toggleTheme}
+        onCheckSub={handleCheckNow}
+        onOpenHistory={(sub) => setHistorySub(sub)}
+        onOpenDomInspector={(sub) => setInspectorSub(sub)}
+        onEditSub={(sub) => { setEditingSub(sub); setIsAddModalOpen(true); }}
+      />
+
+      <WebhookConfigModal
+        isOpen={isWebhookModalOpen}
+        onClose={() => setIsWebhookModalOpen(false)}
+        onSaved={() => showToast('Webhooks Saved', 'Discord & Slack alert triggers updated', 'success')}
       />
 
       {/* Footer */}

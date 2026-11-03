@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User as UserIcon, Send, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
+import { X, User as UserIcon, Send, ArrowRightLeft, CheckCircle2, Webhook } from 'lucide-react';
 import { User } from '../types/auth';
 import { CurrencyCode } from '../types';
 import { CURRENCY_SYMBOLS } from '../services/currencyService';
@@ -11,6 +11,7 @@ interface ProfileSettingsModalProps {
   baseCurrency: CurrencyCode;
   onOpenCurrencyModal?: () => void;
   onOpenTelegramModal?: () => void;
+  onOpenWebhookModal?: () => void;
 }
 
 export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
@@ -19,7 +20,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   user,
   baseCurrency,
   onOpenCurrencyModal,
-  onOpenTelegramModal
+  onOpenTelegramModal,
+  onOpenWebhookModal
 }) => {
   if (!isOpen) return null;
 
@@ -125,6 +127,30 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => { onClose(); onOpenTelegramModal(); }}
+                  className="px-2.5 py-1 rounded border border-black dark:border-neutral-600 bg-white dark:bg-neutral-900 hover:bg-gray-100 font-bold text-[11px] transition-colors"
+                >
+                  Configure
+                </button>
+              )}
+            </div>
+
+            {/* Discord & Slack Webhooks */}
+            <div className="p-3 rounded bg-gray-50 dark:bg-neutral-800 border border-black/10 dark:border-neutral-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Webhook className="w-4 h-4 text-indigo-500" />
+                <div>
+                  <span className="font-bold text-neutral-900 dark:text-white block">
+                    Discord & Slack Webhooks
+                  </span>
+                  <span className="text-[11px] text-neutral-500">
+                    Team notifications & alerts
+                  </span>
+                </div>
+              </div>
+              {onOpenWebhookModal && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onOpenWebhookModal(); }}
                   className="px-2.5 py-1 rounded border border-black dark:border-neutral-600 bg-white dark:bg-neutral-900 hover:bg-gray-100 font-bold text-[11px] transition-colors"
                 >
                   Configure

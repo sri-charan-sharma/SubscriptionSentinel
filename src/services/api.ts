@@ -14,6 +14,7 @@ import {
   INITIAL_SCRAPE_RUNS
 } from './mockData';
 import { validatePricingUrl } from '../utils/ssrfValidator';
+import { webhookService } from './webhookService';
 
 const STORAGE_KEY_SUBS = 'sentinel_subscriptions';
 const STORAGE_KEY_HISTORY = 'sentinel_price_history';
@@ -272,6 +273,7 @@ export const api = {
       sub.last_raw_match = rawText;
       sub.last_scrape_error = undefined;
       sub.consecutive_failures = 0; // Reset failures on OK
+      sub.last_engine_used = sub.scrape_engine === 'PLAYWRIGHT' ? 'PLAYWRIGHT' : (sub.name.toLowerCase().includes('netflix') || sub.name.toLowerCase().includes('spotify') ? 'PLAYWRIGHT' : 'JSOUP');
 
       // Append to price_history (APPEND-ONLY)
       const historyEntry: PriceHistory = {
@@ -321,6 +323,11 @@ export const api = {
               console.warn('Telegram background alert dispatch failed:', err);
             });
           }
+
+          // Dispatch real-time Discord & Slack Webhook alerts if configured
+          webhookService.dispatchPriceHikeAlert(sub, oldPrice, parsedPrice).catch(err => {
+            console.warn('Webhook background alert dispatch failed:', err);
+          });
 
           sub.last_alerted_price = parsedPrice;
           alertTriggered = true;
@@ -398,6 +405,10 @@ export const api = {
     return priceHistories
       .filter(h => h.subscription_id === subscriptionId)
       .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
+  },
+
+  async getAllPriceHistories(): Promise<PriceHistory[]> {
+    return [...priceHistories];
   },
 
   async getNotificationLogs(): Promise<NotificationLog[]> {

@@ -11,10 +11,16 @@ import {
   Clock,
   Sparkles,
   ChevronDown,
-  ArrowUpDown
+  ArrowUpDown,
+  Cpu,
+  Ban,
+  CalendarDays,
+  Camera
 } from 'lucide-react';
 import { Subscription, ScrapeStatus, CurrencyCode } from '../types';
 import { currencyService } from '../services/currencyService';
+import { resolveCancellationUrl } from '../services/popularPresets';
+import { generateGoogleCalendarUrl } from '../services/calendarService';
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[];
@@ -24,6 +30,7 @@ interface SubscriptionTableProps {
   onCheckNow: (id: number) => void;
   onSimulateHike: (sub: Subscription) => void;
   onOpenHistory: (sub: Subscription) => void;
+  onOpenDomInspector?: (sub: Subscription) => void;
   onEdit: (sub: Subscription) => void;
   onDelete: (id: number) => void;
 }
@@ -64,6 +71,7 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
   onCheckNow,
   onSimulateHike,
   onOpenHistory,
+  onOpenDomInspector,
   onEdit,
   onDelete
 }) => {
@@ -247,6 +255,7 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                 const upcoming = isUpcoming(sub.renewal_date);
                 const isChecking = checkingSubId === sub.id;
                 const isExpanded = expandedIds.has(sub.id);
+                const cancelUrl = resolveCancellationUrl(sub);
 
                 return (
                   <React.Fragment key={sub.id}>
@@ -335,6 +344,15 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                               SOON
                             </span>
                           )}
+                          <a
+                            href={generateGoogleCalendarUrl(sub)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                            title="Add recurring renewal alarm to Google Calendar"
+                          >
+                            <CalendarDays className="w-3.5 h-3.5" />
+                          </a>
                         </div>
                       </td>
 
@@ -388,6 +406,28 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                             <TrendingUp className="w-4 h-4" />
                           </button>
 
+                          {/* 1-Click Direct Cancellation (Dark Pattern Buster) */}
+                          {cancelUrl && (
+                            <a
+                              href={cancelUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded bg-gray-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400 border border-black dark:border-neutral-700 text-xs transition-colors flex items-center justify-center"
+                              title={`1-Click Direct Cancellation: Open official cancellation flow for ${sub.name}`}
+                            >
+                              <Ban className="w-4 h-4" />
+                            </a>
+                          )}
+
+                          {/* DOM Snapshot & CSS Selector Sandbox */}
+                          <button
+                            onClick={() => onOpenDomInspector?.(sub)}
+                            className="p-2 rounded bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border border-black dark:border-neutral-700 text-xs transition-colors"
+                            title="Inspect captured DOM snapshot and test selectors"
+                          >
+                            <Camera className="w-4 h-4" />
+                          </button>
+
                           {/* Edit */}
                           <button
                             onClick={() => onEdit(sub)}
@@ -425,9 +465,15 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                 {/* Box 1: Scraped Match or Error Diagnostics */}
                                 <div className="p-4 bg-white dark:bg-neutral-950 rounded-box border border-black dark:border-neutral-700 shadow-micro flex flex-col justify-between">
                                   <div>
-                                    <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block mb-2">
-                                      Price Check Diagnostics
-                                    </span>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block">
+                                        Price Check Diagnostics
+                                      </span>
+                                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-black/20 dark:border-neutral-700 font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1">
+                                        <Cpu className="w-3 h-3 text-neutral-500" />
+                                        {sub.last_engine_used === 'PLAYWRIGHT' ? 'Playwright Chromium' : sub.last_engine_used === 'JSOUP' ? 'Jsoup Fast HTTP' : 'Auto Engine'}
+                                      </span>
+                                    </div>
                                     {sub.last_scrape_status === 'OK' && sub.last_raw_match ? (
                                       <div className="p-2.5 rounded bg-gray-50 dark:bg-neutral-900 border border-black/20 dark:border-neutral-800 text-xs font-mono text-neutral-900 dark:text-white">
                                         <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block mb-1">MATCHED TEXT:</span>
@@ -443,6 +489,17 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                         Pending initial scrape run.
                                       </div>
                                     )}
+
+                                    {/* View Browser Snapshot Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenDomInspector?.(sub)}
+                                      className="mt-3 w-full py-1.5 px-2.5 rounded bg-black dark:bg-white text-white dark:text-black font-mono font-bold text-[11px] flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer shadow-tiny"
+                                      title="Inspect visual browser snapshot and test selectors"
+                                    >
+                                      <Camera className="w-3.5 h-3.5" />
+                                      <span>DOM Snapshot & Selector Tester</span>
+                                    </button>
                                   </div>
                                   <div className="text-[11px] font-mono text-neutral-500 mt-2.5">
                                     Last checked: {sub.last_checked_at ? new Date(sub.last_checked_at).toLocaleString() : 'Never'}
@@ -475,6 +532,27 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                       {sub.price_selector || 'Automatic detection'}
                                     </code>
                                   </div>
+
+                                  <div className="pt-1 border-t border-black/10 dark:border-neutral-800">
+                                    <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 font-bold block mb-1 flex items-center justify-between">
+                                      <span>Direct Cancellation Flow</span>
+                                      <span className="text-[9px] text-neutral-400 font-normal">Dark Pattern Buster</span>
+                                    </span>
+                                    {cancelUrl ? (
+                                      <a
+                                        href={cancelUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-mono text-red-600 dark:text-red-400 underline hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1 truncate"
+                                        title={cancelUrl}
+                                      >
+                                        <span className="truncate">{cancelUrl}</span>
+                                        <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs font-mono text-neutral-400">Auto-resolved on demand</span>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Box 3: Resilience & Alert Metadata */}
@@ -502,6 +580,20 @@ export const SubscriptionTable: React.FC<SubscriptionTableProps> = ({
                                     <span className="text-neutral-700 dark:text-neutral-300">
                                       {new Date(sub.created_at).toLocaleDateString()}
                                     </span>
+                                  </div>
+
+                                  <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-black/10 dark:border-neutral-800">
+                                    <span className="text-neutral-500">Calendar Alarm:</span>
+                                    <a
+                                      href={generateGoogleCalendarUrl(sub)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-mono underline hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 text-neutral-900 dark:text-white"
+                                      title="Sync this renewal to Google Calendar"
+                                    >
+                                      <span>Sync Google Cal</span>
+                                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                    </a>
                                   </div>
                                 </div>
 

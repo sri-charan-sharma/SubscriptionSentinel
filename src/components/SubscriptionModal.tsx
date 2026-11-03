@@ -6,10 +6,14 @@ import {
   Code2,
   Calendar,
   Layers,
-  Link2
+  Link2,
+  Cpu,
+  Sparkles,
+  Ban
 } from 'lucide-react';
-import { Subscription, SubscriptionCategory, CurrencyCode, BillingCycle } from '../types';
+import { Subscription, SubscriptionCategory, CurrencyCode, BillingCycle, ScrapeEngine } from '../types';
 import { validatePricingUrl } from '../utils/ssrfValidator';
+import { POPULAR_PRESETS, PopularPreset } from '../services/popularPresets';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -30,14 +34,49 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
   const [pricingUrl, setPricingUrl] = useState('');
+  const [cancellationUrl, setCancellationUrl] = useState('');
   const [priceSelector, setPriceSelector] = useState('');
   const [renewalDate, setRenewalDate] = useState('');
+  const [scrapeEngine, setScrapeEngine] = useState<ScrapeEngine>('AUTO');
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // URL safety live feedback
   const urlValidation = validatePricingUrl(pricingUrl);
+
+  const handleSelectPreset = (preset: PopularPreset) => {
+    setSelectedPresetId(preset.id);
+    setName(preset.name);
+    setCategory(preset.category);
+    setPrice(preset.defaultPrice.toString());
+    setCurrency(preset.defaultCurrency);
+    setBillingCycle(preset.billingCycle);
+    setPricingUrl(preset.pricingUrl);
+    setCancellationUrl(preset.cancellationUrl || '');
+    setPriceSelector(preset.priceSelector);
+    setScrapeEngine(preset.scrapeEngine);
+    if (preset.priceSelector || preset.scrapeEngine !== 'AUTO') {
+      setShowAdvanced(true);
+    }
+    setError(null);
+  };
+
+  const handleClearPreset = () => {
+    setSelectedPresetId(null);
+    setName('');
+    setCategory('STREAMING');
+    setPrice('15.99');
+    setCurrency('USD');
+    setBillingCycle('MONTHLY');
+    setPricingUrl('https://');
+    setCancellationUrl('');
+    setPriceSelector('');
+    setScrapeEngine('AUTO');
+    setShowAdvanced(false);
+    setError(null);
+  };
 
   useEffect(() => {
     if (subscriptionToEdit) {
@@ -47,9 +86,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setCurrency(subscriptionToEdit.currency);
       setBillingCycle(subscriptionToEdit.billing_cycle);
       setPricingUrl(subscriptionToEdit.pricing_url);
+      setCancellationUrl(subscriptionToEdit.cancellation_url || '');
       setPriceSelector(subscriptionToEdit.price_selector || '');
+      setScrapeEngine(subscriptionToEdit.scrape_engine || 'AUTO');
       setRenewalDate(subscriptionToEdit.renewal_date);
-      setShowAdvanced(Boolean(subscriptionToEdit.price_selector));
+      setShowAdvanced(Boolean(subscriptionToEdit.price_selector) || Boolean(subscriptionToEdit.scrape_engine && subscriptionToEdit.scrape_engine !== 'AUTO'));
+      setSelectedPresetId(null);
     } else {
       setName('');
       setCategory('STREAMING');
@@ -57,11 +99,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setCurrency('USD');
       setBillingCycle('MONTHLY');
       setPricingUrl('https://');
+      setCancellationUrl('');
       setPriceSelector('');
+      setScrapeEngine('AUTO');
       const defaultDate = new Date();
       defaultDate.setDate(defaultDate.getDate() + 30);
       setRenewalDate(defaultDate.toISOString().split('T')[0]);
       setShowAdvanced(false);
+      setSelectedPresetId(null);
     }
     setError(null);
   }, [subscriptionToEdit, isOpen]);
@@ -103,6 +148,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         billing_cycle: billingCycle,
         pricing_url: pricingUrl.trim(),
         price_selector: priceSelector.trim() ? priceSelector.trim() : undefined,
+        cancellation_url: cancellationUrl.trim() ? cancellationUrl.trim() : undefined,
+        scrape_engine: scrapeEngine,
         renewal_date: renewalDate,
         last_scrape_status: subscriptionToEdit ? subscriptionToEdit.last_scrape_status : undefined,
         last_raw_match: subscriptionToEdit ? subscriptionToEdit.last_raw_match : undefined
@@ -141,6 +188,46 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <X className="w-4 h-4 text-neutral-900 dark:text-white" />
           </button>
         </div>
+
+        {/* Quick Presets Bar (1-Click Auto Fill) */}
+        {!subscriptionToEdit && (
+          <div className="px-5 py-2.5 bg-gray-50 dark:bg-neutral-800/60 border-b border-black/10 dark:border-neutral-700 flex-shrink-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 font-bold flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                Popular Presets (1-Click Auto Fill):
+              </span>
+              {selectedPresetId && (
+                <button
+                  type="button"
+                  onClick={handleClearPreset}
+                  className="text-[10px] font-mono text-neutral-500 hover:text-black dark:hover:text-white underline cursor-pointer"
+                >
+                  Clear / Custom
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {POPULAR_PRESETS.map(preset => {
+                const isSelected = selectedPresetId === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset)}
+                    className={`px-2.5 py-1 rounded-box text-[11px] font-mono font-bold whitespace-nowrap transition-all border flex items-center gap-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white shadow-micro'
+                        : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-black/20 dark:border-neutral-700 hover:border-black dark:hover:border-neutral-400'
+                    }`}
+                  >
+                    <span>{preset.tag}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 bg-white dark:bg-neutral-900">
@@ -310,6 +397,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             />
           </div>
 
+          {/* Direct Cancellation URL (Dark Pattern Buster) */}
+          <div>
+            <label className="block text-xs font-mono uppercase text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Ban className="w-3.5 h-3.5 text-neutral-500" />
+                1-Click Cancellation URL (Optional)
+              </span>
+              <span className="text-[10px] font-mono text-neutral-400 font-normal">Dark Pattern Buster</span>
+            </label>
+            <input
+              type="url"
+              value={cancellationUrl}
+              onChange={e => setCancellationUrl(e.target.value)}
+              placeholder="e.g. https://www.netflix.com/cancelplan"
+              className="w-full px-3 py-2 rounded-box bg-gray-50 dark:bg-neutral-800 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:bg-white"
+            />
+            <p className="text-[10px] font-mono text-neutral-500 mt-1">
+              Direct exit link when price hikes strike. Leave blank to auto-resolve from known services.
+            </p>
+          </div>
+
           {/* Advanced Accordion: CSS Selector */}
           <div className="pt-2 border-t border-black/10 dark:border-neutral-800">
             <button
@@ -318,24 +426,47 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               className="text-xs font-mono text-neutral-800 dark:text-neutral-200 hover:underline flex items-center gap-1 font-medium"
             >
               <Code2 className="w-3.5 h-3.5" />
-              <span>{showAdvanced ? 'Hide CSS Selector' : 'Configure Specific CSS Selector (Optional)'}</span>
+              <span>{showAdvanced ? 'Hide Advanced Scraper Options' : 'Configure Scraper Engine & CSS Selector (Optional)'}</span>
             </button>
 
             {showAdvanced && (
-              <div className="mt-2 p-3 rounded-box bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700 space-y-1.5">
-                <label className="block text-[11px] font-mono uppercase text-neutral-700 dark:text-neutral-300 font-semibold">
-                  CSS Selector (Jsoup)
-                </label>
-                <input
-                  type="text"
-                  value={priceSelector}
-                  onChange={e => setPriceSelector(e.target.value)}
-                  placeholder="e.g. .pricing-tier-pro .amount, #monthly-cost"
-                  className="w-full px-3 py-1.5 rounded-box bg-white dark:bg-neutral-900 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none"
-                />
-                <p className="text-[10px] font-mono text-neutral-500">
-                  Leave blank to auto-detect price tokens matching currency patterns in body.
-                </p>
+              <div className="mt-2 p-3.5 rounded-box bg-gray-100 dark:bg-neutral-800 border border-black dark:border-neutral-700 space-y-3">
+                {/* Engine Selector */}
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-neutral-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1.5">
+                    <Cpu className="w-3 h-3 text-neutral-500" />
+                    Scraping Engine
+                  </label>
+                  <select
+                    value={scrapeEngine}
+                    onChange={e => setScrapeEngine(e.target.value as ScrapeEngine)}
+                    className="w-full px-3 py-1.5 rounded-box bg-white dark:bg-neutral-900 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none"
+                  >
+                    <option value="AUTO">Automatic (Jsoup Fast HTTP + Playwright Fallback)</option>
+                    <option value="PLAYWRIGHT">Playwright Headless Browser (Full JS Execution for SPAs)</option>
+                    <option value="JSOUP">Fast HTTP Only (Jsoup for static pages)</option>
+                  </select>
+                  <p className="text-[10px] font-mono text-neutral-500 mt-0.5">
+                    Playwright runs a real headless browser with JavaScript execution for sites like Netflix, Spotify, or AWS.
+                  </p>
+                </div>
+
+                {/* CSS Selector */}
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-neutral-700 dark:text-neutral-300 font-semibold mb-1">
+                    Price CSS Selector
+                  </label>
+                  <input
+                    type="text"
+                    value={priceSelector}
+                    onChange={e => setPriceSelector(e.target.value)}
+                    placeholder="e.g. .pricing-tier-pro .amount, #monthly-cost"
+                    className="w-full px-3 py-1.5 rounded-box bg-white dark:bg-neutral-900 border border-black dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none"
+                  />
+                  <p className="text-[10px] font-mono text-neutral-500 mt-0.5">
+                    Leave blank to auto-detect price tokens matching currency patterns in the document.
+                  </p>
+                </div>
               </div>
             )}
           </div>

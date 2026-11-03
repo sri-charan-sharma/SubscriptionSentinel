@@ -2,6 +2,7 @@ export type SubscriptionCategory = 'STREAMING' | 'CLOUD' | 'SOFTWARE' | 'UTILITY
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
 export type BillingCycle = 'MONTHLY' | 'YEARLY';
 export type ScrapeStatus = 'OK' | 'BLOCKED' | 'TIMEOUT' | 'SELECTOR_NOT_FOUND' | 'PARSE_ERROR';
+export type ScrapeEngine = 'AUTO' | 'JSOUP' | 'PLAYWRIGHT';
 
 export interface Subscription {
   id: number;
@@ -13,6 +14,11 @@ export interface Subscription {
   billing_cycle: BillingCycle;
   pricing_url: string;
   price_selector?: string;
+  cancellation_url?: string;
+  scrape_engine?: ScrapeEngine;
+  last_engine_used?: 'JSOUP' | 'PLAYWRIGHT';
+  last_screenshot_base64?: string;
+  last_dom_html?: string;
   renewal_date: string; // YYYY-MM-DD
   is_active: boolean;
   last_checked_at?: string;
